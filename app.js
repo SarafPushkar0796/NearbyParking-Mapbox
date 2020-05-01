@@ -53,57 +53,51 @@ if (!('remove' in Element.prototype)) {
     }
   }
 
-  var lat = null;
-  var lng = null;
-  var latlng = [];
+  let latt = null;
+  let long = null;
+  let latlng = [];
+  var mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });
+  const geocodeSearch = document.getElementsByClassName('mapboxgl-ctrl-geocoder--input');
+
   function showPosition(position) {
     user_coordinates = {
       lat: position.coords.latitude,
       lng: position.coords.longitude
     };
-    lat = user_coordinates.lat; 
-    lng = user_coordinates.lng;
-    latlng = [lng,lat];
+    latt = user_coordinates.lat; 
+    long = user_coordinates.lng;
+    latlng = [long,latt];
     console.log('User location : ',latlng);
-    marker.setLngLat(latlng).addTo(map)
-    coordinateFeature(lng, lat);
-  }
 
-  function coordinateFeature(lng, lat) {
+    // reverse geocoding
+    mapboxClient.geocoding.reverseGeocode({
+      query: [long, latt]
+    }).send().then(response => {
+      if (response && response.body && response.body.features && response.body.features.length) {
+        feature = response.body.features[0];
+
+        // successfully getting response back
+        console.log(feature);
+        console.log(feature.geometry.coordinates);
+        console.log(feature.place_name);
+        
+      }
+    });
+
     return {
-      center: [lng, lat],
+      center: [long, latt],
       geometry: {
         type: 'Point',
-        coordinates: [lng, lat]
+        coordinates: [long, latt]
       },
-      place_name: 'Lat: ' + lat + ' Lng: ' + lng,
+      place_name: 'Lat: ' + latt + ' Lng: ' + long,
       place_type: ['coordinate'],
       properties: {},
       type: 'Feature'
     };
-  }
-  
-  // reverse geocoding
-  // global scope
-  var feature = null;
-  let featurePlaceName = null;
-  const geocodeSearch = document.getElementsByClassName('mapboxgl-ctrl-geocoder--input');
 
-  var mapboxClient = mapboxSdk({ accessToken: mapboxgl.accessToken });
-
-  mapboxClient.geocoding.reverseGeocode({
-      query: [lng, lat]
-  }).send().then(response => {
-    if (response && response.body && response.body.features && response.body.features.length) {
-      feature = response.body.features[0];
-
-      // successfully getting response back
-      console.log(feature);
-      
-      console.log(featurePlaceName = feature.place_name); 
-      console.log(geocodeSearch.value = feature.place_name);
-    }
-  });
+    marker.setLngLat(latlng).addTo(map);
+  } 
 
   var stores = {
     "type": "FeatureCollection",
@@ -156,10 +150,10 @@ if (!('remove' in Element.prototype)) {
      * - Open a popup for the closest store
      * - Highlight the listing for the closest store.
     */
-    geocoder.on('focus', function(ev) {
+    geocoder.on('result', function(ev) {
 
       /* Get the coordinate of the search result */
-      var searchResult = latlng;
+      var searchResult = ev.geometry;
       console.log(searchResult);
 
       /**
